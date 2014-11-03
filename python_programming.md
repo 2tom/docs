@@ -67,10 +67,57 @@ $() pep8 . | cut -d: -f1 | sort | uniq | xargs autopep8 -i
 ```
 
 ---
-### Code Check
+### test
+#### unittest, nose
+- unit testを実行するためのツール "unittest"はデフォルトでバンドル
+- nose は3rd-partyツール。unittestよりも容易にテストが記載でき、プラグインも豊富
+
+```
+()$ pip install nose
+()$ nosetests
+```
+
+#### coverage
+- 実行されたステートメント情報を収集
+- nose のプラグインを使うとテスト中にどのコードが実行されたか、確認できる
+
+```
+()$ pip install coverage
+```
+
+
+
+#### mock
+- テスト対象が依存しているオブジェクトをmockに入れ替えるライブラリ
+
+```
+()$ pip install mock
+```
+
+#### WebTest
+- Webアプリケーションの機能テスト用のライブラリ
+- WSGIアプリケーションに擬似的なリクエストを実行して結果を取得
+
+
+
+```
+()$ pip install webtest
+```
+
+
+
+
+
+
+---
+### Web Framework
 ### django
+- MVCに対応したPythonのWebFramework
+
+
 ```
 ()# pip install django
 ()# django-manage.py startproject [proj]
-()# 
+()# cd [proj]
+()# python manage.py startapp [app]
 ```

@@ -1,20 +1,18 @@
 Docker HandsOn
 ===========
 
+**BASIC**
+
 -------
 ### Table of contents
-
-You can insert a table of contents using the marker `[TOC]`:
-
-[TOC]
-
+[toc]
 
 ##<i class="icon-cog"></i> HandsOn
 Docker のインストールから基本コマンドの実行等を記載しています。HandsOnの後に各設定値の説明等々がございますのでご参照ください。
 本資料は 64bit 環境での手順となります。32bit環境の場合は適宜読み替えをお願いします。
 
 -------
-### 環境情報
+## 環境情報
 本ドキュメント作成に使用した環境情報をまとめます。HandsOn実施に当たってはCentOSが稼動する環境であれば問題ありません。
 | 項目 | バージョン |
 | ---- | --------- -|
@@ -27,9 +25,10 @@ Docker のインストールから基本コマンドの実行等を記載して�
 
 
 -------
-### ゲストOSセットアップ 
+## ゲストOSセットアップ 
+HandsOn用に環境を用意します。
 
-#### 仮想マシン準備
+### 仮想マシン準備
 
 - 事前準備
 >- VMwarePlayerインストール
@@ -38,8 +37,8 @@ Docker のインストールから基本コマンドの実行等を記載して�
 - マシン作成
 > - 環境に合わせてセットアップを行ってください。
 > - CentOSが稼動可能な環境であれば問題ありません。
-> - 私の環境を以下にまとめます
-> 
+
+- 環境情報 
 > | 項目 | 内容 |
 > | ---- | ---- |
 > | Machine | IBM X230 |
@@ -53,71 +52,64 @@ Docker のインストールから基本コマンドの実行等を記載して�
 > | ファイルの場所 | *デフォルト* |
 > | ディスクサイズ | 20GB |
 
-
 - マシン設定変更
 > - ネットワークを選択
 > - アダプター1 をNAT用
 > - アダプター2 をホストオンリー用
 
--------
 
-#### CentOSインストール
-
+### CentOSインストール
 - minimalインストール
-```
-～省略～
-```
 
-####　OS初期設定
+
+### OS初期設定
 - SELINUX停止
-> \# vi /etc/selinux/config
-> SELINUX=disabled
 
-
+```
+# vi /etc/selinux/config
+SELINUX=disabled
+```
 
 - sysctl 編集
-> ¥# vi /etc/sysctl.conf
-> - ip forwarding 有効化
-> net.ipv4.ip_forward = 1
-> - 最終行に追記
-> net.ipv6.conf.all.disable_ipv6 = 1
-> net.ipv6.conf.default.disable_ipv6 = 1
-> ¥# sysctl -p
-> ¥# shutdown -r now
+
+```
+# vi /etc/sysctl.conf
+net.ipv4.ip_forward = 1
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+
+# sysctl -p
+# shutdown -r now
 ```
 
-- NIC設定(ご使用の環境で異なります。）
+- ifcfg-eth0
+```
+# vi /etc/sysconfig/network-scripts/ifcfg-eth0
+ONBOOT=yes
+NM_CONTROLLED=no
+BOOTPROTO=static
+IPADDR=192.168.153.51
+NETMASK=255.255.255.0
+GATEWAY=192.168.153.2
+DNS1=192.168.153
+```
 
-eth0:NAT
-> ¥# vi /etc/sysconfig/network-scripts/ifcfg-eth0
-> ONBOOT=yes
-> NM_CONTROLLED=no
-> BOOTPROTO=static
-> IPADDR=192.168.153.51
-> NETMASK=255.255.255.0
-> GATEWAY=192.168.153.2
-> DNS1=192.168.153
-
-
-
-eth1:HostOnly
->  # vi /etc/sysconfig/network-scripts/ifcfg-eth1
----------------------------------------------------------------------------------
+- ifcfg-eth1
+```
+# vi /etc/sysconfig/network-scripts/ifcfg-eth1
 ONBOOT=yes
 NM_CONTROLLED=no
 BOOTPROTO=static
 IPADDR=192.168.88.51
 NETMASK=255.255.255.0
----------------------------------------------------------------------------------
 ```
 
 - Proxy設定（Proxy配下のNWの場合）
 下記ファイルを配置
+
 ```
 # vi /etc/profile.d/proxy.sh
-
-下記内容を記載して保存
----------------------------------------------------------------------------------
+↓下記内容を追記
 #!/bin/sh
 function setproxy(){
         proxy_uri="aaaa:8080"
@@ -127,45 +119,35 @@ function setproxy(){
         echo -n "PROXY PASSWORD: "
         read -s proxy_pw
         echo
-        export http_proxy="http://${proxy_id}:${proxy_pw}@${proxy_uri}"
-        export https_proxy="http://${proxy_id}:${proxy_pw}@${proxy_uri}"
+        export http_proxy="http://\${proxy_id}:\${proxy_pw}@\${proxy_uri}"
+        export https_proxy="http://\${proxy_id}:\${proxy_pw}@\${proxy_uri}"
         curl -I http://google.co.jp
 }
----------------------------------------------------------------------------------
 ```
 
 ```
 # source /etc/profile.d/proxy.sh
 # setproxy
 PROXY_URI: aaa:8080
-PROXY USER: <z付社員番号>
-PROXY PASSWORD: <Knightのパスワード>
+PROXY USER: [z付社員番号]
+PROXY PASSWORD: [Knightのパスワード]
 HTTP/1.1 301 Moved Permanently
-Location: http://www.google.co.jp/
-Content-Type: text/html; charset=UTF-8
-Date: Tue, 04 Nov 2014 06:53:17 GMT
-Expires: Thu, 04 Dec 2014 06:53:17 GMT
-Cache-Control: public, max-age=2592000
-Server: gws
-Content-Length: 221
-X-XSS-Protection: 1; mode=block
-X-Frame-Options: SAMEORIGIN
-Alternate-Protocol: 80:quic,p=0.01
-Proxy-Connection: Keep-Alive
-Connection: Keep-Alive
+〜省略〜
 ```
 
 - OS/PKGアップデート
+
 ```
 # yum -y install yum-plugin-fastestmirror
 # yum -y update
 # yum clean all
-
 # shutdown -r now
 ```
 
 
 -------
+## Dockerセットアップ
+Dockerのインストール及び、設定を行います。
 
 ### Dockerインストール
 
@@ -173,63 +155,67 @@ Connection: Keep-Alive
 ```
 # setproxy
 PROXY_URI: aaaa:8080
-PROXY USER: <z付社員番号>
-PROXY PASSWORD: <Knightのパスワード>
+PROXY USER: [z付社員番号]
+PROXY PASSWORD: [Knightのパスワード\]
 ～省略～
+
+# rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
+# sed -i.org 's/enabled=1/enabled=0/' /etc/yum.repos.d/epel.repo
 ```
-
-> \# rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm
-> \# sed -i.org 's/enabled=1/enabled=0/' /etc/yum.repos.d/epel.repo
-
 
 - Dockerインストール
 ```
 # yum install -y --enablerepo=epel docker-io
-
 # rpm -q docker-io
 docker-io-1.2.0-3.el6.x86_64 
 # docker -v
 Docker version 1.2.0, build fa7b24f/1.2.0
-
 ```
 
-<i class="icon-pencil"></i>　Tips:  下記PKGが追加されます
-```
-docker-io-1.2.0-3.el6.x86_64
-gpg-pubkey-0608b895-4bd22942
-libcgroup-0.40.rc1-15.el6_6.x86_64
-lua-alt-getopt-0.7.0-1.el6.noarch
-lua-filesystem-1.4.2-1.el6.x86_64
-lua-lxc-1.0.6-1.el6.x86_64
-lxc-1.0.6-1.el6.x86_64
-lxc-libs-1.0.6-1.el6.x86_64
-xz-4.999.9-0.5.beta.20091007git.el6.x86_64
-```
+> <i class="icon-pencil"></i>**Note:  追加されたパッケージは以下の通り**
+> docker-io-1.2.0-3.el6.x86_64
+> gpg-pubkey-0608b895-4bd22942
+> libcgroup-0.40.rc1-15.el6_6.x86_64
+> lua-alt-getopt-0.7.0-1.el6.noarch
+> lua-filesystem-1.4.2-1.el6.x86_64
+> lua-lxc-1.0.6-1.el6.x86_64
+> lxc-1.0.6-1.el6.x86_64
+> lxc-libs-1.0.6-1.el6.x86_64
+> xz-4.999.9-0.5.beta.20091007git.el6.x86_64
 
-- Docker起動
+
+### Docker起動
+- サービス起動
 ```
 # service docker start
 # ps -ef | grep docker | grep -v grep 
 root      1455     1  0 04:10 pts/0    00:00:00 /usr/bin/docker -d
+```
 
+- Docker情報の取得
+下記よりセットアップ情報が確認できます。
+
+```
 # docker info
 Containers: 0
 Images: 0
 Storage Driver: devicemapper
- Pool Name: docker-253:0-523433-pool
- Pool Blocksize: 64 Kb
- Data file: /var/lib/docker/devicemapper/devicemapper/data
- Metadata file: /var/lib/docker/devicemapper/devicemapper/metadata
- Data Space Used: 291.5 Mb
- Data Space Total: 102400.0 Mb
- Metadata Space Used: 0.7 Mb
- Metadata Space Total: 2048.0 Mb
+Pool Name: docker-253:0-523433-pool
+Pool Blocksize: 64 Kb
+Data file: /var/lib/docker/devicemapper/devicemapper/data
+Metadata file: /var/lib/docker/devicemapper/devicemapper/metadata
+  Data Space Used: 291.5 Mb
+  Data Space Total: 102400.0 Mb
+  Metadata Space Used: 0.7 Mb
+  Metadata Space Total: 2048.0 Mb
 Execution Driver: native-0.2
 Kernel Version: 2.6.32-504.el6.x86_64
 Operating System: <unknown>
 ```
 
+### デバイス状態確認
 - Devicemapper デバイスの確認
+CentOS,RHELはDeviceMapperが利用されています
 ```
 # dmsetup ls --tree
 vg_handson01-lv_swap (253:1)
@@ -241,7 +227,8 @@ docker-253:0-523433-pool (253:2)
  mq (7:1)
 ```
 
-- docker0 Bridgeの確認
+- docker0  Bridgeの確認
+
 ```
 # brctl show
 bridge name     bridge id               STP enabled     interfaces
@@ -268,31 +255,668 @@ Chain DOCKER (2 references)
 target     prot opt source               destination'
 ```
 
+-------
+##  Docker イメージの登録
+
+### 公式リポジトリより登録（From DockerHub)
+
+- 公式リポジトリの検索
+```
+# docker search centos | head
+NAME                                            DESCRIPTION                                     STARS     OFFICIAL   AUTOMATED
+centos                                          The official build of CentOS.                   572       [OK]       
+tianon/centos                                   CentOS 5 and 6, created using rinse instea...   28                   
+ansible/centos7-ansible                         Ansible on Centos7                              14                   [OK]
+saltstack/centos-6-minimal                                                                      7                    [OK]
+blalor/centos                                   Bare-bones base CentOS 6.5 image                7                    [OK]
+ariya/centos6-teamcity-server                   TeamCity Server 8.1 on CentOS 6                 6                    [OK]
+```
+<i class="icon-pencil"></i>**Note: 詳細は公式サイトを確認してください　https://registry.hub.docker.com/**
+
+
+- イメージ取得
+DockerHubよりイメージを取得します。
+今回はCentOS公式リポジトリよりCentOS6(Latest)を取得します。
+```
+# docker pull centos:centos6
+Pulling repository centos
+70441cac1ed5: Download complete 
+511136ea3c5a: Download complete 
+5b12ef8fd570: Download complete 
+```
+
+- イメージ確認
+取得したイメージがDockerリポジトリに登録されたことを確認します。
+イメージファイルの依存関係をTree状で確認する際は"-t"オプションを付与します。
+OS上では"var/lib/docker/graph/"の配下にイメージ情報が保存されます
+
+```
+# docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+centos              centos6             70441cac1ed5        16 hours ago        215.8 MB
+
+# docker images -t
+Warning: '-t' is deprecated, it will be removed soon. See usage.
+└─511136ea3c5a Virtual Size: 0 B
+  └─5b12ef8fd570 Virtual Size: 0 B
+    └─70441cac1ed5 Virtual Size: 215.8 MB Tags: centos:centos6
+```
+
+- OS上のイメージファイル保存先
+
+```
+# find /var/lib/docker/graph
+/var/lib/docker/graph
+/var/lib/docker/graph/511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158
+/var/lib/docker/graph/511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158/layersize
+/var/lib/docker/graph/511136ea3c5a64f264b78b5433614aec563103b4d4702f3ba7d4d2698e22c158/json
+/var/lib/docker/graph/70441cac1ed570d6c84b35382c9914c327e208f93a9d2e5227f6ee6c1111cb81
+/var/lib/docker/graph/70441cac1ed570d6c84b35382c9914c327e208f93a9d2e5227f6ee6c1111cb81/layersize
+/var/lib/docker/graph/70441cac1ed570d6c84b35382c9914c327e208f93a9d2e5227f6ee6c1111cb81/json
+/var/lib/docker/graph/_tmp
+/var/lib/docker/graph/5b12ef8fd57065237a6833039acc0e7f68e363c15d8abb5cacce7143a1f7de8a
+/var/lib/docker/graph/5b12ef8fd57065237a6833039acc0e7f68e363c15d8abb5cacce7143a1f7de8a/layersize
+/var/lib/docker/graph/5b12ef8fd57065237a6833039acc0e7f68e363c15d8abb5cacce7143a1f7de8a/json 
+```
+
+
+###  Docker用オリジナルイメージ登録
+手動でDockerへImportするOSイメージを作成します。
+なお、Packerでも作成可能ですので、興味があれば調べてください。
+
+- febootstrap インストール
+
+```
+# yum -y install febootstrap xz
+```
+
+- OSイメージ作成
+
+```
+# febootstrap -i bash -i coreutils -i tar -i bzip2 -i gzip -i vim-minimal -i wget -i patch -i diffutils -i iproute -i yum centos centos65 "http://ftp.riken.jp/Linux/centos/6.5/os/x86_64/" -u "http://ftp.riken.jp/Linux/centos/6.5/updates/x86_64/"
+```
+
+- baseイメージの登録
+```
+# touch centos65/etc/resolv.conf
+# touch centos65/sbin/init 
+# tar --numeric-owner -Jcpf centos65.tar.xz -C centos65 .
+# cat centos65.tar.xz | docker import - local/centos65
+6cb2b7cbe999eed3580a931b8262b4942368f13fea76c7f8229972b7e70d83c6
+# docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+local/centos65      latest              6cb2b7cbe999        22 seconds ago      260.1 MB
+centos              centos6             70441cac1ed5        20 hours ago        215.8 MB
+```
+
+-------
+##  Dockerコンテナ起動
+### インタラクティブモード
+インタラクティブモードでコンテナを起動した後基本的な一連の操作を行います。
+
+- インタラクティブモードで起動
+Dockerをインタラクティブモードで起動するためには"-i"オプションを用いてコンテナを起動します。
+```
+# docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+
+# docker run -i -t centos:centos6 /bin/bash
+[root@0edd781ffee1 /]# 
+```
+
+- コンテナのホスト名確認
+ホスト名はコンテナIDになります
+```
+[root@0edd781ffee1 /]# hostname
+0edd781ffee1
+```
+
+- コンテナのディスクを確認
+Rootディスクは10GBです。ハードコーディングされているため、サイズを変更したい場合はソースコードを編集して、Buildしてください。
+
+```
+[root@0edd781ffee1 /]# df -h
+Filesystem            Size  Used Avail Use% Mounted on
+rootfs                9.9G  387M  9.0G   5% /
+/dev/mapper/docker-8:1-393760-0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215
+                      9.9G  387M  9.0G   5% /
+tmpfs                 295M     0  295M   0% /dev
+shm                    64M     0   64M   0% /dev/shm
+/dev/sda1             7.9G  1.5G  6.1G  20% /etc/resolv.conf
+/dev/sda1             7.9G  1.5G  6.1G  20% /etc/hostname
+/dev/sda1             7.9G  1.5G  6.1G  20% /etc/hosts
+tmpfs                 295M     0  295M   0% /proc/kcore
+```
+
+- NIC確認
+NICはeth0が作成され、docker0 ブリッジと同一セグメントのIPアドレスが付与されます。
+```
+[root@0edd781ffee1 /]# ifconfig
+eth0      Link encap:Ethernet  HWaddr 0E:EB:27:95:32:88  
+          inet addr:172.17.0.6  Bcast:0.0.0.0  Mask:255.255.0.0
+          inet6 addr: fe80::ceb:27ff:fe95:3288/64 Scope:Link
+          UP BROADCAST RUNNING  MTU:1500  Metric:1
+          RX packets:6 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:7 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:468 (468.0 b)  TX bytes:558 (558.0 b)
+
+lo        Link encap:Local Loopback  
+          inet addr:127.0.0.1  Mask:255.0.0.0
+          inet6 addr: ::1/128 Scope:Host
+          UP LOOPBACK RUNNING  MTU:16436  Metric:1
+          RX packets:0 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:0 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:0 
+          RX bytes:0 (0.0 b)  TX bytes:0 (0.0 b)
+```
+
+- コンテナ内部でオペレーション実施
+```
+[root@0edd781ffee1 ~]# touch /root/test
+[root@0edd781ffee1 ~]# echo "aaaa" > /root/testfile
+[root@0edd781ffee1 ~]# useradd tera
+[root@0edd781ffee1 ~]# grep tera /etc/passwd
+tera:x:500:500::/home/tera:/bin/bash
+[root@0edd781ffee1 ~]# passwd tera
+[root@0edd781ffee1 ~]# passwd tera
+Changing password for user tera.
+New password: 
+BAD PASSWORD: it is too short
+BAD PASSWORD: is too simple
+Retype new password: 
+passwd: all authentication tokens updated successfully.
+```
+
+- コンテナとのアクセスを中断
+```
+CTRL+pq 
+#
+```
+
+- コンテナの状態確認
+コンテナが稼働していることを確認
+```
+# docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+0edd781ffee1        centos:centos6      "/bin/bash"         5 minutes ago       Up 5 minutes                            sleepy_davinci 
+```
+
+- コンテナ内プロセス確認
+基本的にはDockerは１コンテナ、１プロセス（コマンド）を推奨しているため、通常は対象プロセスが１つ見えます。
+
+```
+# docker top 0edd781ffee1
+```
+
+- コンテナの標準出力確認
+```
+# docker logs 0edd781ffee1
+```
+
+- コンテナ起動後からのファイルシステム差分確認
+コンテナ起動時から、現在までの差分情報を確認することができます。
+```
+# docker diff 0edd781ffee1
+C /home
+A /home/tera
+A /home/tera/.bash_profile
+A /home/tera/.bashrc
+A /home/tera/.bash_logout
+C /var/spool/mail
+A /var/spool/mail/tera
+C /var/log/lastlog
+C /etc
+C /etc/shadow-
+C /etc/gshadow
+C /etc/group-
+C /etc/shadow
+C /etc/gshadow-
+C /etc/passwd
+C /etc/group
+C /root
+A /root/testfile
+A /root/.bash_history
+```
+
+- 稼働中コンテナのファイル確認
+コンテナ稼働中は"/var/lib/docker/devicemapper/mnt/[ContainerID]/"にrootfsはマウントされています。
+これらはコンテナ停止時にマウントが解除されます。
+```
+# find /var/lib/docker | grep testfile
+/var/lib/docker/devicemapper/mnt/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215/rootfs/root/testfile
+
+# cat /var/lib/docker/devicemapper/mnt/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215/rootfs/root/testfile
+aaaa
+```
+
+- コンテナのOS上での管理情報確認
+execdriverはlibcontainerを制御しています。
+"/var/lib/docker/execdriver/native/" 配下のcontainer.json、state.jsonによりNamespace, Cgroups, Bridge, vethに関する情報を確認できます。
+```
+# cat /var/lib/docker/execdriver/native/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215/state.json | python -mjson.tool
+{
+    "cgroup_paths": {
+        "blkio": "/cgroup/blkio/docker/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215", 
+        "cpu": "/cgroup/cpu/docker/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215", 
+        "cpuacct": "/cgroup/cpuacct/docker/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215", 
+        "cpuset": "/cgroup/cpuset/docker/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215", 
+        "devices": "/cgroup/devices/docker/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215", 
+        "freezer": "/cgroup/freezer/docker/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215", 
+        "memory": "/cgroup/memory/docker/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215"
+    }, 
+    "init_pid": 9691, 
+    "init_start_time": "1105627", 
+    "network_state": {
+        "veth_child": "veth355c", 
+        "veth_host": "veth48e5"
+    }
+}
+
+# cat /var/lib/docker/execdriver/native/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215/container.json | python -mjson.tool
+{
+    "capabilities": [
+        "CHOWN", 
+        "DAC_OVERRIDE", 
+        "FSETID", 
+        "FOWNER", 
+        "MKNOD", 
+        "NET_RAW", 
+        "SETGID", 
+        "SETUID", 
+        "SETFCAP", 
+        "SETPCAP", 
+        "NET_BIND_SERVICE", 
+        "SYS_CHROOT", 
+        "KILL", 
+        "AUDIT_WRITE"
+    ], 
+    "cgroups": {
+        "allowed_devices": [
+            {
+                "cgroup_permissions": "m", 
+                "major_number": -1, 
+                "minor_number": -1, 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "m", 
+                "major_number": -1, 
+                "minor_number": -1, 
+                "type": 98
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "major_number": 5, 
+                "minor_number": 1, 
+                "path": "/dev/console", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "major_number": 4, 
+                "path": "/dev/tty0", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "major_number": 4, 
+                "minor_number": 1, 
+                "path": "/dev/tty1", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "major_number": 136, 
+                "minor_number": -1, 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "major_number": 5, 
+                "minor_number": 2, 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "major_number": 10, 
+                "minor_number": 200, 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "file_mode": 438, 
+                "major_number": 1, 
+                "minor_number": 3, 
+                "path": "/dev/null", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "file_mode": 438, 
+                "major_number": 1, 
+                "minor_number": 5, 
+                "path": "/dev/zero", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "file_mode": 438, 
+                "major_number": 1, 
+                "minor_number": 7, 
+                "path": "/dev/full", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "file_mode": 438, 
+                "major_number": 5, 
+                "path": "/dev/tty", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "file_mode": 438, 
+                "major_number": 1, 
+                "minor_number": 9, 
+                "path": "/dev/urandom", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "file_mode": 438, 
+                "major_number": 1, 
+                "minor_number": 8, 
+                "path": "/dev/random", 
+                "type": 99
+            }
+        ], 
+        "name": "0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215", 
+        "parent": "docker"
+    }, 
+    "environment": [
+        "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", 
+        "HOSTNAME=0edd781ffee1", 
+        "TERM=xterm"
+    ], 
+    "hostname": "0edd781ffee1", 
+    "mount_config": {
+        "device_nodes": [
+            {
+                "cgroup_permissions": "rwm", 
+                "major_number": 10, 
+                "minor_number": 229, 
+                "path": "/dev/fuse", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "file_mode": 438, 
+                "major_number": 1, 
+                "minor_number": 3, 
+                "path": "/dev/null", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "file_mode": 438, 
+                "major_number": 1, 
+                "minor_number": 5, 
+                "path": "/dev/zero", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "file_mode": 438, 
+                "major_number": 1, 
+                "minor_number": 7, 
+                "path": "/dev/full", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "file_mode": 438, 
+                "major_number": 5, 
+                "path": "/dev/tty", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "file_mode": 438, 
+                "major_number": 1, 
+                "minor_number": 9, 
+                "path": "/dev/urandom", 
+                "type": 99
+            }, 
+            {
+                "cgroup_permissions": "rwm", 
+                "file_mode": 438, 
+                "major_number": 1, 
+                "minor_number": 8, 
+                "path": "/dev/random", 
+                "type": 99
+            }
+        ], 
+        "mounts": [
+            {
+                "destination": "/etc/resolv.conf", 
+                "private": true, 
+                "source": "/var/lib/docker/containers/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215/resolv.conf", 
+                "type": "bind", 
+                "writable": true
+            }, 
+            {
+                "destination": "/etc/hostname", 
+                "private": true, 
+                "source": "/var/lib/docker/containers/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215/hostname", 
+                "type": "bind", 
+                "writable": true
+            }, 
+            {
+                "destination": "/etc/hosts", 
+                "private": true, 
+                "source": "/var/lib/docker/containers/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215/hosts", 
+                "type": "bind", 
+                "writable": true
+            }
+        ]
+    }, 
+    "namespaces": {
+        "NEWIPC": true, 
+        "NEWNET": true, 
+        "NEWNS": true, 
+        "NEWPID": true, 
+        "NEWUTS": true
+    }, 
+    "networks": [
+        {
+            "address": "127.0.0.1/0", 
+            "gateway": "localhost", 
+            "mtu": 1500, 
+            "type": "loopback"
+        }, 
+        {
+            "address": "172.17.0.7/16", 
+            "bridge": "docker0", 
+            "gateway": "172.17.42.1", 
+            "mtu": 1500, 
+            "type": "veth", 
+            "veth_prefix": "veth"
+        }
+    ], 
+    "restrict_sys": true, 
+    "tty": true
+}
+
+```
+
+- コンテナの情報確認
+
+```
+IPアドレス確認
+# docker inspect --format="{{.NetworkSettings.IPAddress}}" 0edd781ffee1
+172.17.0.6
+
+コンテナの詳細情報確認
+# docker inspect 0edd781ffee1 
+[{
+    "Args": [],
+    "Config": {
+        "AttachStderr": true,
+        "AttachStdin": true,
+        "AttachStdout": true,
+        "Cmd": [
+            "/bin/bash"
+        ],
+        "CpuShares": 0,
+        "Cpuset": "",
+        "Domainname": "",
+        "Entrypoint": null,
+        "Env": [
+            "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+        ],
+        "ExposedPorts": null,
+        "Hostname": "0edd781ffee1",
+        "Image": "centos:centos6",
+        "Memory": 0,
+        "MemorySwap": 0,
+        "NetworkDisabled": false,
+        "OnBuild": null,
+        "OpenStdin": true,
+        "PortSpecs": null,
+        "StdinOnce": true,
+        "Tty": true,
+        "User": "",
+        "Volumes": null,
+        "WorkingDir": ""
+    },
+    "Created": "2014-11-04T15:12:25.53049348Z",
+    "Driver": "devicemapper",
+    "ExecDriver": "native-0.2",
+    "HostConfig": {
+        "Binds": null,
+        "CapAdd": null,
+        "CapDrop": null,
+        "ContainerIDFile": "",
+        "Devices": [],
+        "Dns": null,
+        "DnsSearch": null,
+        "Links": null,
+        "LxcConf": [],
+        "NetworkMode": "bridge",
+        "PortBindings": {},
+        "Privileged": false,
+        "PublishAllPorts": false,
+        "RestartPolicy": {
+            "MaximumRetryCount": 0,
+            "Name": ""
+        },
+        "VolumesFrom": null
+    },
+    "HostnamePath": "/var/lib/docker/containers/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215/hostname",
+    "HostsPath": "/var/lib/docker/containers/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215/hosts",
+    "Id": "0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215",
+    "Image": "70441cac1ed570d6c84b35382c9914c327e208f93a9d2e5227f6ee6c1111cb81",
+    "MountLabel": "",
+    "Name": "/sleepy_davinci",
+    "NetworkSettings": {
+        "Bridge": "docker0",
+        "Gateway": "172.17.42.1",
+        "IPAddress": "172.17.0.4",
+        "IPPrefixLen": 16,
+        "PortMapping": null,
+        "Ports": {}
+    },
+    "Path": "/bin/bash",
+    "ProcessLabel": "",
+    "ResolvConfPath": "/var/lib/docker/containers/0edd781ffee187ff8d5ffc488cc399f2ffae8dc2d113bb2360b9569a32cdf215/resolv.conf",
+    "State": {
+        "ExitCode": 0,
+        "FinishedAt": "0001-01-01T00:00:00Z",
+        "Paused": false,
+        "Pid": 8944,
+        "Restarting": false,
+        "Running": true,
+        "StartedAt": "2014-11-04T15:12:25.626568987Z"
+    },
+    "Volumes": {},
+    "VolumesRW": {}
+}
+]
+```
+
+- OS側におけるdocker0 , veth の確認
+
+```
+# brctl show
+bridge name	bridge id		STP enabled	interfaces
+docker0		8000.26335717ffda	no		veth03f9
+
+# ifconfig veth03f9
+veth03f9  Link encap:Ethernet  HWaddr 26:33:57:17:FF:DA  
+          inet6 addr: fe80::2433:57ff:fe17:ffda/64 Scope:Link
+          UP BROADCAST RUNNING  MTU:1500  Metric:1
+          RX packets:7 errors:0 dropped:0 overruns:0 frame:0
+          TX packets:6 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000 
+          RX bytes:558 (558.0 b)  TX bytes:468 (468.0 b)
+```
+
+
+- コンテナへアクセス
+
+```
+# docker attach 0edd781ffee1
+[root@0edd781ffee1 /]# 
+```
+
+
+
+- コンテナ終了
+実施中のCmd（現在は/bin/bash)終了でコンテナは停止します
+```
+[root@0edd781ffee1 /]# exit
+exit
+
+# docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                      PORTS               NAMES
+0edd781ffee1        centos:centos6      "/bin/bash"         10 minutes ago      Exited (0) 16 seconds ago                       sleepy_davinci
+```
+
+- コンテナ再開
+```
+# docker start 0edd781ffee1
+0edd781ffee1
+
+# docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+0edd781ffee1        centos:centos6      "/bin/bash"         11 minutes ago      Up 6 seconds                            sleepy_davinci  
+```
+
+- コンテナ終了
+```
+# docker stop 0edd781ffee1
+0edd781ffee1
+
+# docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                       PORTS               NAMES
+0edd781ffee1        centos:centos6      "/bin/bash"         13 minutes ago      Exited (-1) 12 seconds ago                       sleepy_davinci
+```
+
+- コンテナ削除
+停止中のコンテナを削除します。稼働中のコンテナをいきなる削除する場合は"-f"オプションを付与するか、"docker stop"にて一旦停止してから削除してください。
+```
+# docker rm 0edd781ffee1
+# docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+```
+
+
+
 ----
 
-###  Docker イメージ作成
-1. Dockerイメージ作成
-* febootstrap インストール
-> \# yum install febootstrap xz
+###  Dockerfile
 
-* OSイメージ作成
-> \#  febootstrap -i bash -i coreutils -i tar -i bzip2 -i gzip -i vim-minimal -i wget -i patch -i diffutils -i iproute -i yum centos centos65 "http://ftp.riken.jp/Linux/centos/6.5/os/x86_64/" -u "http://ftp.riken.jp/Linux/centos/6.5/updates/x86_64/"
-
-* baseイメージの登録
-> \# touch centos65/etc/resolv.conf
-> \# touch centos65/sbin/init
-> 
-> \# tar --numeric-owner -Jcpf centos65.tar.xz -C centos65 .
->
-> \# cat centos65.tar.xz | docker import - local/centos:6.5
-> 9f1aae94871218bb9f6d8ffae8a73c098e4746a358fc1ed1c7cf0700178a7ffd
->
-> \# docker images
-REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
-local/centos        6.5                 9f1aae948712        7 minutes ago       309.7 MB
-centos              centos6             0b443ba03958        3 weeks ago         297.6 MB
-centos              latest              0b443ba03958        3 weeks ago         297.6 MB
-centos              6.4                 539c0211cd76        13 months ago       300.6 MB
 
 ----
 
@@ -900,6 +1524,13 @@ centos              6.4                 539c0211cd76        13 months ago       
 \# cat /sys/fs/cgroup/memory/docker/*container_id*/memory.limit_in_bytes
 
 > Written with [StackEdit](https://stackedit.io/).
+
+
+    あああ
+
+　　　　ああああ
+あああ
+
 
 
   [1]: https://www.docker.io/static/img/homepage-docker-logo.png

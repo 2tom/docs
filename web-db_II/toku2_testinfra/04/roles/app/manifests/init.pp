@@ -1,4 +1,0 @@
-class app {
-  include ntp
-}
-

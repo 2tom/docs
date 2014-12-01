@@ -1,4 +1,0 @@
-class proxy {
-  include nginx
-}
-

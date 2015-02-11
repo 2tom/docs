@@ -3,6 +3,8 @@ Golang 1st Step
 
 <p><img src="https://go.googlecode.com/hg/doc/gopher/bumper.png" alt="gopher" title="gopher" width="480" height="270"/></p>
 
+file:///c/aaa/aa/a.jpg
+../
 
 ---------
 

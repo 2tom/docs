@@ -105,8 +105,18 @@ $() pep8 . | cut -d: -f1 | sort | uniq | xargs autopep8 -i
 ```
 
 
+---
+参考URL
+http://achiku.github.io/2014/04/04/road-to-django-best-practice.html
+
+http://daigo3.github.io/fullstackpython.github.com/django.html
+
+http://django-mongodb-engine.readthedocs.org/en/latest/topics/setup.html#
+
+http://nwpct1.hatenablog.com/entry/how-to-write-unittest-on-django
 
 
+http://www.revsys.com/blog/2014/nov/21/recommended-django-project-layout/
 
 
 ---
@@ -121,3 +131,10 @@ $() pep8 . | cut -d: -f1 | sort | uniq | xargs autopep8 -i
 ()# cd [proj]
 ()# python manage.py startapp [app]
 ```
+
+---
+### mongodb
+- django の MONGODB ORM
+
+```
+()# pip install django-

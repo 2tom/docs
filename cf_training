@@ -128,6 +128,12 @@ DEA: Droplet Execution Agent
  - CI + automated deployment
 
 
+### DIEGO
+- DIEGO = DEA in GO
+- Metron Agent がすべてのログをとる
+- Brain(MetricsServer) が性能をとっている（HealthManager)
+- Converger: Scaleup,Scaleout
+- Auctioneer: Dropletを稼働させるCellを選択（スケジューラ）
 
 
 

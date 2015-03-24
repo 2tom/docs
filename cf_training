@@ -1,0 +1,8 @@
+#### logging
+- loggregater 
+- enable connect 3rd party service
+```
+$ cf cups <LOGSERVICE> -l syslog://<HOST>:<PORT>
+$ cf bind-service <APP> <LOGSERVICE>
+$ cf restage
+```

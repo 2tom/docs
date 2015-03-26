@@ -28,8 +28,8 @@ $ cd .nvm
 $ git checkout v0.24.0
 $ cd ../
 $ . .nvm/nvm.sh
-$ nvm install v0.12.0
-$ nvm use v0.12.0
+$ nvm install v0.12.1
+$ nvm use v0.12.1
 ```
 
 ```
@@ -355,8 +355,203 @@ var foo = new AsyncCB(function(){
 - プロパティ
 - readableプロパティを確認することで読み込みの可否が判断できる
 
-#### 出力ストリーム
+- sample
 
+```
+$ cat instream.js
+var path = require('path');
+fs = require('fs');
+
+var filePath = path.join(__dirname, 'a.txt');
+
+var readStream = fs.createReadStream(filePath);
+readStream.setEncoding('utf8');
+
+readStream.on('data', function(data){
+  console.log(data);
+});
+
+readStream.on('end', function(){
+  console.log('end');
+});
+
+readStream.on('error', function(err){
+  console.log('error occured');
+  console.log(err);
+});
+```
+
+
+
+
+#### 出力ストリーム
+- データ書き込みを司る
+- 出力ストリームのイベント  
+
+```
+//drain
+- dataイベントが発生しなくなるとendが生成
+
+//error
+- dataイベントが発生しなくなった際に生成される
+
+//close
+- ファイル記述子が閉じられた段階で生成される
+
+//pipe
+- 読み込み中にエラーが発生した場合に生成され、リスナに例外オブジェクトが渡される
+- errorイベントリスナが登録されていない場合は uncaughtExceptionが発生
+```
+
+- メソッド
+
+```
+//write()
+- データ書き込み
+- write()にはBufferを渡せる
+- write(string, [encoding],[fd])　という形で文字列を書き込み可能
+- fdを使用するとUNIXストリームでのみのサポート
+- write()は出力対象のデータがカーネルバッファにフラッシュされるとtrue, バッファがいっぱいの場合はfalse
+- falseをうけた場合はdrainイベントを利用
+- drainイベントはカーネルバッファに空きができると発生するため、
+- write()->'drain'->write()という形でwriteを再開する形式が一般的
+
+//end()
+- 書き込みを終了
+- Bufferと文字列を渡すことができる
+
+//destroy()
+- ファイル記述子をcloseする
+- 出力キューに溜まっていたデータは送信されない
+
+//destroySoon()
+- 出力キューのデータが空になった時点でファイル記述子をcloseする
+```
+
+- プロパティ
+- writeableプロパティを確認することで読み込みの可否が判断できる
+
+- stream sample
+
+```
+var path = require('path'),
+  fs = require('fs');
+
+var outputFilePath = path.join(__dirname, 'write.txt');
+var writeStream = fs.createWriteStream(outputFilePath);
+
+var inputFilePath = path.join(__dirname, 'read.txt');
+var readStream = fs.createReadStream(inputFilePath);
+
+writeStream.on('pipe', function(){
+  console.log('readableStream pipes writeStream');
+})
+writeStream.on('error', function(err){
+  console.log('error occured');
+  console.log(err);
+});
+writeStream.on('close', function(){
+  console.log('writable stream closed');
+});
+
+readStream.pipe(writeStream);
+
+readStream.on('data', function(data){
+  console.log('>> data event occured');
+});
+readStream.on('end', function(){
+  console.log('read end');
+});
+readStream.on('error', function(err){
+  console.log('error occured');
+  console.log(err);
+});
+```
+
+
+### Buffer
+- バイナリデータを扱う際に利用する
+- v8ヒープ外部でメモリを確保する
+- Bufferはバイナリファイルの読み書きに利用する
+
+#### 使い方
+- Bufferは文字列オブジェクトとして利用する
+- デフォルトエンコーディングのUTF−8以外を利用する場合エンコーディングを指定して読み出す
+- Bufferはグローバルクラスなのでコードの中でBufferクラスを利用することが可能
+- Bufferオブジェクト作成時にサイズを引数に指定する
+- オブジェクトを直接引数に指定する方法がある
+- sample
+
+```
+$ cat buf.js
+var size = 16;
+var buf = new Buffer(size);
+var arr = [1,2,3,4,5,6,7,8];
+var arrayBuf = new Buffer(arr);
+var str = "sample";
+var stringBuf = new Buffer(str);
+
+console.log(buf);
+console.log(arrayBuf);
+console.log(stringBuf);
+
+$ node buf.js
+<Buffer 00 a8 97 7a 02 00 00 00 00 63 72 65 61 74 65 50>
+<Buffer 01 02 03 04 05 06 07 08>
+<Buffer 73 61 6d 70 6c 65>
+```
+
+#### Buffer利用方法
+- 書き込み
+
+``` 
+- buf.write(string, [offset], [length], [encoding])
+ var a = 'test';
+ buf.write(a, 0, a.length, 'utf-8');
+```
+
+- Bufferの文字列利用
+
+```
+var str = 'sample';
+buf.write(str);
+console.log(buf.toString('utf-8', 0,4));
+```
+
+- Bufferの配列
+
+```
+var a = 'buff';
+buf.write(a);
+console.log(buf[0]);
+```
+- copy(), concat(), slice() APIが存在する
+
+### ファイル
+- var fs = require('fs') でファイルシステムモジュールを使用可能
+
+#### ファイル書き込み
+- fs.writeFile(filename, data, [encoding], [callback])
+- 絶対パス、相対パスが使える
+- 相対パスはスクリプトファイルからのパスではなく、process.cwd()が返すパスからの相対になる
+- 第１引数：ファイルパス
+- 第２引数：書き込む内容(string or bufferの形式)
+- 第３引数：ファイルの文字コード（デフォルトはnull）
+- 第４引数：コールバック
+
+#### ファイル読み込み
+- fs.readFile(filename, [encoding], [callback])
+- ファイルの内容を全て読み込む
+- 絶対パス、相対パスが使える
+- 相対パスはスクリプトファイルからのパスではなく、process.cwd()が返すパスからの相対になる
+- 第１引数：ファイルパス
+- 第２引数：ファイルの文字コード（デフォルトはnull）
+- 第３引数：コールバック
+```
+var fs = require('fs');
+fs.writeFile('target.txt', 'some data', 'utf8', function(err){
+});
+```
 
 
 

@@ -281,6 +281,7 @@ Enter a number between 3 to 8 to choose one of the listed network SSIDs: 7
 
 #### repository設定、Upgrate
 
+
 ```
 # echo "src intel-iotdk http://iotdk.intel.com/repos/1.1/intelgalactic" > /etc/opkg/intel-iotdk.conf
 
@@ -290,7 +291,32 @@ Enter a number between 3 to 8 to choose one of the listed network SSIDs: 7
 # opkg upgrade
 ```
 
+#### ntpdateインストール
+opkgパッケージにはntpがないためソースよりコンパイルして利用する
+```
+# curl http://www.eecis.udel.edu/~ntp/ntp_spool/ntp4/ntp-4.2/ntp-4.2.8p2.tar.gz -o ntpdate.tar.gz
+# tar zxvf ntpdate.tar.gz
+# cd ntp-4.2.8p2
+# ./configure -prefix=/usr -sysconfdir=/etc -enable-linuxcaps -with-binsubdir=sbin -with-lineeditlibs=readline
+# make
+# make install
+# cd ../
+# rm -rf ntp*
 
+# ntpdate -v ntp.nict.jp
+# ntpdate -q ntp.nict.jp
+# ntpdate -bv ntp.nict.jp
+# export TZ=JST-9
+```
+
+#### nvmインストール
+
+```
+# git clone git://github.com/creationix/nvm.git .nvm
+# cd .nvm
+# git tag
+# git checkout v0.25.3
+# cd ../
 
 
 

@@ -2,14 +2,16 @@ Intel Edisonセットアップ
 =====
 
 
-### Hardware
-- Intel Edison + Minibreak board
-- USB2.0ケーブル(A-microBタイプ)50cm
-- 
+# 仕様
 
-### 事前準備
+# ドキュメント
 
-#### 各種ドライバをインストールする
+# Getting Started
+
+
+
+
+## 各種ドライバをインストールする
 
 **Mac**
 
@@ -22,7 +24,7 @@ Intel Edisonセットアップ
 - FTDI Driver(win)
 
 
-### 組み立てと起動
+## 組み立てと起動
 - Edison と breakboardを接続する（カチッと音がする）
 - 手でネジ留めする
 - 
@@ -91,10 +93,10 @@ $ ssh root@192.168.2.15
 root@edison:~# ifconfig
 ```
 
-### ファームウェアの確認と最新化
+## ファームウェアの確認と最新化
 以後のオペレーションは sshログイン　想定で記載しています
 
-#### ファームウェアのバージョン確認
+### ファームウェアのバージョン確認
 - edisonにログイン
 - edisonのバージョン確認
 
@@ -111,7 +113,7 @@ Linux edison 3.10.17-poky-edison+ #1 SMP PREEMPT Wed Aug 20 16:09:18 CEST 2014 i
 ```
 
 
-#### マスストレージのフォーマットをFAT32に変更する
+### マスストレージのフォーマットをFAT32に変更する
 ファームウェアの更新を行うにはEdisonのマスストレージにファイルを書き込む必要があるが、Edisonのマスストレージは、初期状態ではFAT16であり、マックでは書き込みができない。そのため、EdisonのマスストレージをFAT32でフォーマットしなおす必要がある。
 
 - Macのディスクユーティリティー起動
@@ -124,11 +126,11 @@ Linux edison 3.10.17-poky-edison+ #1 SMP PREEMPT Wed Aug 20 16:09:18 CEST 2014 i
 - 情報タブを選択し、フォーマットがMS-DOS(FAT32)になったことを確認
 
 
-#### Yocto Linux イメージのダウンロード
+### Yocto Linux イメージのダウンロード
 - [Intel Edison Support & Downloads Page](http://www.intel.com/support/edison/sb/CS-035180.htm?_ga=1.86494616.126673810.1428127765) より最新のOSイメージ（Yocto complete image, ZIPファイル）をダウンロードする
 
 
-#### イメージを解凍して、EDISONに展開
+### イメージを解凍して、EDISONに展開
 - ZIPファイルを解凍し、中身のフォルダを全て上記のEDISONへコピーする
 
 ```
@@ -141,7 +143,7 @@ $ ls -ld /Volumes/EDISON/
 $ mv * /Volumes/EDISON/
 ```
 
-#### Edisonのファームウェア更新
+### Edisonのファームウェア更新
 - edisonにログイン
 - 不要ファイルの削除
 
@@ -214,7 +216,7 @@ $ rm -rf /Volumes/EDISON/*
 ```
 
 
-### 初期設定
+## 初期設定
 - edisonにログインする
 
 ```
@@ -222,7 +224,7 @@ $ ssh root@192.168.2.15
 ```
 
 
-#### ノード名、パスワード、Wi-Fiの設定を行う
+### ノード名、パスワード、Wi-Fiの設定を行う
 ```
 # configure_edison --setup
 ```
@@ -279,8 +281,20 @@ Enter a number between 3 to 8 to choose one of the listed network SSIDs: 7
 192.168.179.10
 ```
 
-#### repository設定、Upgrate
+### base-feed repository設定、Upgrate
 
+```
+# vi /etc/opkg/base-feeds.conf
+src all     http://iotdk.intel.com/repos/1.1/iotdk/all
+src x86 http://iotdk.intel.com/repos/1.1/iotdk/x86
+src i586    http://iotdk.intel.com/repos/1.1/iotdk/i586
+
+# opkg update
+# opkg upgrade
+```
+
+
+### repository設定、Upgrate
 
 ```
 # echo "src intel-iotdk http://iotdk.intel.com/repos/1.1/intelgalactic" > /etc/opkg/intel-iotdk.conf
@@ -291,8 +305,9 @@ Enter a number between 3 to 8 to choose one of the listed network SSIDs: 7
 # opkg upgrade
 ```
 
-#### ntpdateインストール
+### ntpdateインストール
 opkgパッケージにはntpがないためソースよりコンパイルして利用する
+
 ```
 # curl http://www.eecis.udel.edu/~ntp/ntp_spool/ntp4/ntp-4.2/ntp-4.2.8p2.tar.gz -o ntpdate.tar.gz
 # tar zxvf ntpdate.tar.gz
@@ -309,7 +324,7 @@ opkgパッケージにはntpがないためソースよりコンパイルして�
 # export TZ=JST-9
 ```
 
-#### nvmインストール
+### nvmインストール
 
 ```
 # git clone git://github.com/creationix/nvm.git .nvm
@@ -317,8 +332,113 @@ opkgパッケージにはntpがないためソースよりコンパイルして�
 # git tag
 # git checkout v0.25.3
 # cd ../
+```
+
+### Eagletボードへ差し替え
+
+---
+
+## ubilinuxへの入れ替え
+IntelEdisonのデフォルトであるYoctoLinuxはパッケージ類があまり充実していないため、つかいずらい部分がある。そこで、ubilinux（Debianベース）への入れ替えを行う。
+
+### HomeBrewのインストール
+
+```
+$ ruby -e “$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)”
+```
+
+### 状態確認
+
+```
+$ sudo brew doctor
+```
+
+### 追加モジュールインストール
+
+```
+$ sudo brew install coreutils gnu-getopt dfu-util
+```
+
+### ubilinuxのダウンロード
+下記リンクよりダウンロード(マイナーバージョンは変更になるため、下記リンク)
+[ubilinux for Intel Edison](http://www.emutexlabs.com/ubilinux)
+
+### ubilinuxファイルの展開
+解凍してディレクトリ内へ移動
+
+### インストールScript編集(ubilinux-edison-150309.tar.gzの場合)
+
+```
+$ tar zxvf ubilinux-edison-150309.tar.gz
+$ cp -p toFlash/flashall.sh toFlash/flashall.sh.org
+$ vi toFlash/flashall.sh
+* 下記差分がでるように編集
+
+$ diff toFlash/flashall.sh*
+223,224c223
+< #	flash-command --alt u-boot-env1 -D "${VARIANT_FILE}" -R
+< 	flash-command --alt u-boot-env1 -D "${VARIANT_FILE}"
+---
+> 	flash-command --alt u-boot-env1 -D "${VARIANT_FILE}" -R
+232,233c231
+< #	flash-command --alt rootfs -D "${ESC_BASE_DIR}/edison-image-edison.ext4" -R
+< 	flash-command --alt rootfs -D "${ESC_BASE_DIR}/edison-image-edison.ext4"
+---
+> 	flash-command --alt rootfs -D "${ESC_BASE_DIR}/edison-image-edison.ext4" -R
+```
 
 
+### install Script実行
+
+```
+$ sudo ./flasall.sh
+ :
+Please plug and reboot the board
+上記が出力されたら、電源抜差しして再起動
+```
+
+### ユーザ設定
+- root/edison, edison/edison がデフォルト設定なので変更
+
+```
+$ sudo screen /dev/tty.usbserial-AJ0360DW  115200
+root/edison
+
+# adduser --ingroup users tera
+# passwd tera
+# deluser --remove-home edison
+# passwd
+```
+
+### WiFi設定
+
+```
+# vi /etc/network/interfaces
+下記を追記
+auto wlan0
+iface wlan0 inet manual
+    wpa-roam /etc/wpa_supplicant/wpa_supplicant.conf
+iface wifi0 inet dhcp
 
 
+# iwlist wlan0 scan
+# wpa_passphrase [SSID] [PASS]
+ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev
+
+network={
+	ssid="Tera WiFi 5GHz"
+	#psk="tera1215"
+	psk=9a31e4670d4431cbce5b66e160f749ca726d9f5e6a5d0da64d851cf8b9791f
+}
+
+
+network={
+	ssid="Tera WiFi 5GHz"
+	#psk="tera1215"
+	psk=9a31e4670d4431cbce5b66e160f749ca726d9f5e6a5d0da64d851cf8b9791f7a
+        id_str="wifi0"
+}
+
+
+```
  
